@@ -1,5 +1,7 @@
 import mysql.connector as mysql
 
+
+# replace passwd with your mysql workbench password
 db_connection = mysql.connect(host='localhost',username='root',passwd='',database = 'library')
 
 
