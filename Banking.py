@@ -1,157 +1,224 @@
 import mysql.connector as mysql
+from datetime import date
 
-db_connection = mysql.connect(host='localhost',username='root',passwd='',database='Banking_System')
+'''
+Project Name : Library Application
+Description : 
+1. Developed a Console Application for College Library.(Resume) 
+2. Perfomred CRUYD operations on DB using python
+2. Used technologies like Python, MqSql.
 
-def CreateAccount():
+where it can perform operations like 
+Adding a student, Adding a book, Issuing and returning the books, checking status 
+'''
 
-    print("Creating New User Account")
-    accnum = int(input("Enter the Account number for your Account:"))
-    name = str(input("Enter the Name of Account Holder:"))
-    intialDeposit = int(input("Enter the Greater than 1000 Amount to open your Account:"))
-    typeOfAccount = str(input("Choose either Savings/Current Account:"))
-    phnum = int(input("Enter your Mobile Number:"))
 
-    mycur = db_connection.cursor()
+# replace passwd with your mysql workbench password
+db_connection = mysql.connect(host='localhost',username='root',passwd='',database = 'library')
 
-    # Inserting queries the data into the Account, Amount
-    query = "insert into account values(%s,%s,%s,%s,%s)"
-    query1 = "insert into amount values(%s,%s)"
 
-    # Data to insert 
-    data = (accnum,name,intialDeposit,typeOfAccount,phnum)
-    data1 = (accnum,intialDeposit)
+def addStudent():
+    sid = int(input("Enter student ID : "))
+    sname = input("Enter student name : ")
+    branch = input("Enter student branch : ")
+    year = input("Enter student year : ")
+    mailid = input("Enter student mail id : ")
 
-    # Executing the queries
-    mycur.execute(query,data)
-    mycur.execute(query1,data1)
+    cursor = db_connection.cursor()
 
-    db_connection.commit()
-    print("Successfully Created your Account")
+    # Insert the data 
+    query = "insert into student values(%s,%s,%s,%s,%s)"
+    data = (sid,sname,branch,year,mailid)
 
-def DepositAmount():
-
-    print("Deposit Machine")
-    accnum = int(input("Enter the Account Number to Deposit:"))
-    amount = int(input("Enter money you wish to deposit:"))
-
-    # Query
-    query = "update account set amount=amount+{} where AccNum=accnum".format(amount)
-    query1 = "update amount set amount=amount+{} where AccNum=accnum".format(amount)
-
-    mycur = db_connection.cursor()
-
-    mycur.execute(query)
-    mycur.execute(query1)
-
+    cursor.execute(query,data)
     db_connection.commit()
 
-    print("Deposit successfully in Account Number {}".format(accnum))
+    print("Successfully added student into the database")
 
-def WithDrawalAmount():
+    menuOption = int(input("Press 1 to goback to main menu"))
+    if(menuOption==1):
+        return
 
-    print("With Drawal Machine")
-    accnum = int(input("Enter the Account Number to Deposit :"))
-    amount = int(input("Enter money you wish to withdrawal :"))
 
-    mycur = db_connection.cursor()
-    query = "select Amount from amount where AccNum={}".format(accnum)
+def addBook():
+    bid = int(input("Enter book ID : "))
+    bname = input("Enter book name : ")
+    author = input("Enter book author name : ")
+    price = int(input("Enter the price of book : "))
+    pages = int(input("Enter the no.of pages : "))
+    status = input("Enter the status of book  avail/issued : ")
+    copies = int(input("Enter the no.of copies : "))
 
-    mycur.execute(query)
-    availableBalance = mycur.fetchone()
+    cursor = db_connection.cursor()
 
-    temp = availableBalance[0] - amount
+    #insert data into the books table
 
-    query1 = "update amount set Amount={} where AccNum={}".format(temp,accnum)
-    query2 = "update account set Amount={} where AccNum={}".format(temp,accnum)
-    mycur.execute(query1)
-    mycur.execute(query2)
+    query = "insert into books values(%s,%s,%s,%s,%s,%s)"
+    data = (bid,bname,author,price,pages,status)
+
+    for i in range(0,copies):
+        cursor.execute(query,data)
+    
     db_connection.commit()
 
-    print("Withdrawal Successfull")
+    print("Successfully added books into the database")
 
-    query = "select * from account where AccNum={}".format(accnum)
-    mycur.execute(query)
-    availableBalance = mycur.fetchone()
-    print("Available Balance: ",availableBalance[2])
+    menuOption = int(input("Press 1 to goback to main menu"))
+    if(menuOption==1):
+        return
 
-def BalanceEnquiry():
+def checkBookStatus(bookId):
 
-    print("Balance Enquiry Machine")
-    accnum = int(input("Enter your account number : "))
+    query = 'select * from books where bid = '+bookId+';'
+    
+    cursor = db_connection.cursor()
+    cursor.execute(query)
 
-    query = "select * from account where AccNum={}".format(accnum)
+    result = cursor.fetchone()
 
-    mycur = db_connection.cursor()
+    if(result[5]=="available"):
+        return True
+    else:
+        return False
 
-    mycur.execute(query)
+def issueBook():
+    
+    print("I am in Issue Counter")
+    bid = input("Book Id : ")
+    sid = int(input("Student ID : "))
+    dat = date.today()
 
-    availableBalance = mycur.fetchone()
+    # Error
 
-    print("Available Balance: ",availableBalance[2])
+    # status = checkBookStatus(bid)
+    curs = db_connection.cursor()
 
-    #db_connection.commit()
+    if(True):
+        query = "insert into transactions values(%s,%s,%s)"
+        data = (sid,bid,dat)
 
-def DetailsOfUser():
+        curs.execute(query,data)
 
-    print("User Details")
-    accnum = int(input("Enter your Account number : "))
+        query = 'update books set status = "issued" where bid = '+bid+''
 
-    mycur = db_connection.cursor()
+        curs.execute(query)
+        db_connection.commit()
 
-    query = "select * from account where AccNum={}".format(accnum)
+        print("Suucessfully Issued Book")
+    
+    else:
+        print("Book is not available")
+        
 
-    mycur.execute(query)
-    print("Account Details")
-    for i in mycur:
-        print(i)
+def returnBook():
 
-def DeleteUser():
+    bid = input("Enter book Id : ")
+    sid = input("Enter student ID : ")
 
-    print("Deleting Your Account")
-    accnum = int(input("Enter your account number: "))
+    query = 'delete from transactions where bid={} and sid={}'.format(bid,sid)
+    cursor = db_connection.cursor()
+    cursor.execute(query)
+    db_connection.commit()
 
-    query = "delete from account where AccNum={}".format(accnum)
-    query1 = "delete from amount where AccNum={}".format(accnum)
+    print("Successfully returned the book")
+    
 
-    mycur = db_connection.cursor()
+def modifyBook():
+    
+    bid = int(input("Enter the Book ID : "))
 
-    mycur.execute(query)
-    mycur.execute(query1)
+    print("Options to modify the book details")
+    print("1. TO change the name of book")
+    print("2. TO change the author name ")
+    print("3. TO price of Book ")
+
+    choice = int(input("Enter your choice : "))
+    if(choice == 1):
+        newName = input("Enter the new name : ")
+        query = "update books set author={} where bid={}".format(newName,bid)
+        cursor = db_connection.cursor()
+        cursor.execute(query)
+
+    elif(choice == 2):
+        newAuthor = input("Enter the new author name : ")
+        query = "update books set author={} where bid={}".format(newAuthor,bid)
+        cursor = db_connection.cursor()
+        cursor.execute(query)
+
+    elif(choice == 3):
+        newPrice = input("Enter the new price of book : ")
+        query = "update books set price={} where bid={}".format(newPrice,bid)
+        cursor = db_connection.cursor()
+        cursor.execute(query)
 
     db_connection.commit()
 
-    print("{} Account removed from our bank".format(accnum))
-    print("Thanks for using, we are happy serve you")
+    print("Successfully modify the book values")
+
+def issuedBooks():
+    
+    query = 'select * from books where status="issued";'
+
+    cursor = db_connection.cursor()
+    cursor.execute(query)
+
+    results = cursor.fetchall()
+    for record in results:
+        print(record)
+
+    db_connection.commit()
+
+    menuOption = int(input("Press 1 to goback to main menu"))
+    if(menuOption==1):
+        return
+
+def availableBooks():
+    query = 'select * from books where status="available";'
+
+    cursor = db_connection.cursor()
+    cursor.execute(query)
+
+    results = cursor.fetchall()
+    for record in results:
+        print(record)
+
+    db_connection.commit()
+
+    menuOption = int(input("Press 1 to goback to main menu"))
+    if(menuOption==1):
+        return
+
+
+
 
 while(True):
-
-    print("Welcome to Python Banking System")
-    print("1. Create New User")
-    print("2. Deposit Amount")
-    print("3. Withdrawal Amount")
-    print("4. Balance Enquiry")
-    print("5. Print details of User")
-    print("6. Remove Account")
-    print("7. Exit")
-
-    option = int(input("Enter what would you like to do : "))
-
-    if(option == 1):
-        CreateAccount()
-    elif(option == 2):
-        DepositAmount()
-    elif(option == 3):
-        WithDrawalAmount()
-    elif(option == 4):
-        BalanceEnquiry()
-    elif(option == 5):
-        DetailsOfUser()
-    elif(option == 6):
-        DeleteUser()
-    elif(option == 7):
-        print("Thanks for using our bank")
-        print("See You Again !")
+    print("********** Main Menu ***********")
+    print("1. Add Student")
+    print("2. Add Books")
+    print("3. Issue a book")
+    print("4. Return a book")
+    print("6. Modify Book Information")
+    print("7. View issued books in library")
+    print("8. View all available books in library")
+    print("Type 0 to exit from application")
+    
+    choice = int(input("Enter your choice : ")) #7
+    if(choice == 1):
+        addStudent()
+    elif(choice == 2):
+        addBook()
+    elif(choice == 3):
+        issueBook()
+    elif(choice == 4):
+        returnBook()
+    elif(choice == 6):
+        modifyBook()
+    elif(choice == 7):
+        issuedBooks()
+    elif(choice == 8):
+        availableBooks()
+    elif(choice == 0):
         break
-
-
+    else:
+        print("Invalid Selection")
 
